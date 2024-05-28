@@ -18,7 +18,6 @@ namespace relauncher_test
         private string[] cmdArgs;
         private CancellationTokenSource cancellationTokenSource;
         private CancellationToken cancellationToken;
-        private AutoResetEvent autoResetHandler;
         private bool terminateApplicationCancel = false;
 
         public Form1()
@@ -35,7 +34,6 @@ namespace relauncher_test
             numericTasks.Value = Environment.ProcessorCount;
             cancellationTokenSource = new CancellationTokenSource();
             cancellationToken = cancellationTokenSource.Token;
-            autoResetHandler = new AutoResetEvent(true);
 
         }
 
@@ -149,6 +147,7 @@ namespace relauncher_test
             for (int i=0; i < (int)numericTasks.Value; i++)
             {
                 tasks.Add(new Thread(() => { TaskForRun((int)numericTaskRuntime.Value * 1000); }));
+                tasks[i].IsBackground = true;
                 tasks[i].Start();
             }
             await Task.Run(() =>
@@ -158,8 +157,8 @@ namespace relauncher_test
                         while (curtask.ThreadState != System.Threading.ThreadState.Stopped) { }
                     }
                     Thread.Sleep(1000);
-                    buttonRunTasks.Enabled = true;
-                    buttonCancelTasks.Enabled = false;
+                    buttonRunTasks.Invoke( (MethodInvoker) (()=> { buttonRunTasks.Enabled = true; }) );
+                    buttonCancelTasks.Invoke( (MethodInvoker) (() => { buttonCancelTasks.Enabled = false; }) );
                     statusLabelTasks.Text = "";
                 });
         }
@@ -170,18 +169,14 @@ namespace relauncher_test
             Stopwatch runtime = new Stopwatch();
             Random rand = new Random();
 
-            autoResetHandler.WaitOne();
-            statusLabelTasks.Text += "+";
-            autoResetHandler.Set();
+            statusStrip2.Invoke((MethodInvoker)(() => { statusLabelTasks.Text += "+"; }) );
             runtime.Start();
             while ( ( runtime.ElapsedMilliseconds < taskRuntime ) && ( !cancellationToken.IsCancellationRequested ) )
             {
                     double a = 6*Math.Sin(2 * Math.PI * (rand.NextDouble() - 0.5))/7+3*Math.Sqrt(rand.NextDouble()); // что-то делаем
             }
             runtime.Stop();
-            autoResetHandler.WaitOne();
-            statusLabelTasks.Text += "-";
-            autoResetHandler.Set();
+            statusStrip2.Invoke((MethodInvoker)(() => { statusLabelTasks.Text += "-"; }) );
         }
 
         private void buttonCancelTasks_Click(object sender, EventArgs e)
@@ -209,7 +204,7 @@ namespace relauncher_test
                 int tick = (int)numericSelfTerminate.Value;
                 while ( (tick > 0) && (!terminateApplicationCancel) )
                 {
-                    statusLabel.Text = $"Приложение закрывавется через {tick} сек.";
+                    statusStrip1.Invoke((MethodInvoker)(()=> { statusLabel.Text = $"Приложение закрывавется через {tick} сек."; }));
                     Application.DoEvents();
                     Thread.Sleep(1000);
                     tick--;
