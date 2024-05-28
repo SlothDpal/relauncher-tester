@@ -134,4 +134,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>powershell.exe Compress-Archive -Path '$(TargetDir)\*' -DestinationPath '$(TargetDir)\$(TargetName)-$(PlatformName)' -Force</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>powershell.exe rm $(TargetDir)\*</PreBuildEvent>
+  </PropertyGroup>
 </Project>
